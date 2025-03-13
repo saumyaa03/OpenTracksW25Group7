@@ -6,7 +6,11 @@ buildscript {
     }
     dependencies {
         classpath "com.android.tools.build:gradle:8.8.0"
-        classpath "org.bouncycastle:bcutil-jdk18on:1.80"
+        //classpath "org.bouncycastle:bcutil-jdk18on:1.80"
+        // Update or add these BouncyCastle dependencies
+        classpath "org.bouncycastle:bcutil-jdk18on:1.76"
+        classpath "org.bouncycastle:bcprov-jdk18on:1.76"
+        classpath "org.bouncycastle:bcpkix-jdk18on:1.76"
     }
 }
 
