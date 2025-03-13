@@ -32,7 +32,9 @@ def getVersionName = { ->
         }
         return stdout.toString().trim()
     } catch (ignored) {
-        throw new GradleException('VersionName could not be read:' + ignored.message)
+        // Return a fallback version instead of throwing an exception
+        println 'Warning: Could not get version from Git: ' + ignored.message
+        return "v4.17.7-dev" // Using the current version with -dev suffix
     }
 }
 
@@ -45,7 +47,9 @@ def getVersionCode = { ->
         }
         return Integer.valueOf(stdout.toString().trim())
     } catch (ignored) {
-        throw new GradleException('VersionCode could not be read:' + ignored.message)
+        // Return a fallback version code instead of throwing an exception
+        println 'Warning: Could not get version code from Git: ' + ignored.message
+        return 6028 // Using the current version code
     }
 }
 
