@@ -534,7 +534,8 @@
          final int MAX_RECORDING_DISTANCE = Integer.parseInt(resources.getString(R.string.max_recording_distance_default));
          return Distance.of(getInt(R.string.max_recording_distance_key, MAX_RECORDING_DISTANCE));
      }
- 
+
+     // helper method
      private static String[] formatDistanceEntries(Resources resources, String[] entryValues, int defaultValue, Integer... specialValues) {
          String[] entries = new String[entryValues.length];
          UnitSystem unitSystem = getUnitSystem();
@@ -577,7 +578,8 @@
      
          return entries;
      }
-     
+
+     // change 1
      static String[] getMaxRecordingDistanceEntries() {
          String[] entryValues = resources.getStringArray(R.array.max_recording_distance_values);
          int maxRecordingDistanceDefault = Integer.parseInt(resources.getString(R.string.max_recording_distance_default));
@@ -616,7 +618,8 @@
          final int RECORDING_GPS_ACCURACY = Integer.parseInt(resources.getString(R.string.recording_gps_accuracy_default));
          return Distance.of(getInt(R.string.recording_gps_accuracy_key, RECORDING_GPS_ACCURACY));
      }
- 
+
+     // change 2
      static String[] getThresholdHorizontalAccuracyEntries() {
          String[] entryValues = resources.getStringArray(R.array.recording_gps_accuracy_values);
          int recordingGPSAccuracyDefault = Integer.parseInt(resources.getString(R.string.recording_gps_accuracy_default));
