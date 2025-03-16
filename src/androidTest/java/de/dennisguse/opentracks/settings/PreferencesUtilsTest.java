@@ -236,6 +236,9 @@ public class PreferencesUtilsTest {
                     : context.getString(R.string.stats_custom_layout_average_pace_key) + ",0,0;"
                     + context.getString(R.string.stats_custom_layout_pace_key) + ",0,0;");
     }
+    private String createUpdatedProfileString(String profileName) {
+        return createProfileString(profileName, false);
+    }
     
     @Test
     public void testEditCustomLayouts() {
