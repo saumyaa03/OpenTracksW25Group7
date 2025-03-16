@@ -106,6 +106,8 @@ android {
         debug {
             applicationIdSuffix '.debug'
             versionNameSuffix '-debug'
+            signingConfig signingConfigs.debug
+
         }
         release {
             crunchPngs false
@@ -126,6 +128,7 @@ android {
             dimension 'version'
             applicationId 'de.dennisguse.opentracks'
             versionNameSuffix 'irreproducible'
+            
         }
         reproducible {
             // Developer Binaries: https://github.com/OpenTracksApp/OSMDashboard/releases/download/v%v/de.dennisguse.opentracks.playstore_%v.apk
