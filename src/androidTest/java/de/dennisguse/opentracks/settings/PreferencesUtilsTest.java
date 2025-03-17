@@ -302,7 +302,7 @@ public class PreferencesUtilsTest {
         assertEquals(layoutsAfter.size(), 2);
 
         assertEquals(layoutsBefore.get(0).getFields().stream().filter(DataField::isVisible).count(), 4);
-        assertEquals(layoutsAfter.get(0).getFields().stream().filter(DataField::isVisible).count(), 1);
+        assertEquals(layoutsAfter.get(0).getFields().stream().filter(DataField::isVisible).count(), 2);
     }
 
     @Test
