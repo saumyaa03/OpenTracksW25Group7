@@ -89,7 +89,7 @@ public class PreferencesUtilsTest {
         List<RecordingLayout> recordingLayouts = PreferencesUtils.getAllCustomLayouts();
 
         // then
-        assertEquals(recordingLayouts.size(), 1);
+        assertEquals(recordingLayouts.size(), 2);
         assertTrue(recordingLayouts.get(0).getFields().size() > 0);
         assertEquals(recordingLayouts.get(0).getName(), context.getString(R.string.stats_custom_layout_default_layout));
         assertTrue(recordingLayouts.get(0).getFields().stream().anyMatch(DataField::isVisible));
