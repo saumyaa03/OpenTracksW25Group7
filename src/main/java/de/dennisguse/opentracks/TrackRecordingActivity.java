@@ -50,6 +50,7 @@ import de.dennisguse.opentracks.ui.util.ActivityUtils;
 import de.dennisguse.opentracks.util.IntentDashboardUtils;
 import de.dennisguse.opentracks.util.IntentUtils;
 import de.dennisguse.opentracks.util.TrackUtils;
+import de.dennisguse.opentracks.util.TrackMenuUtils;
 
 /**
  * An activity to show the track detail, record a new track or resumes an existing one.
@@ -285,7 +286,9 @@ public class TrackRecordingActivity extends AbstractActivity implements ChooseAc
         if (item.getItemId() == R.id.track_detail_menu_select_layout) {
             AlertDialog.Builder builder = new AlertDialog.Builder(this);
             List<String> layoutNames = PreferencesUtils.getAllCustomLayoutNames();
-            builder.setTitle(getString(R.string.custom_layout_select_layout)).setItems(layoutNames.toArray(new String[0]), (dialog, which) -> PreferencesUtils.setDefaultLayout(layoutNames.get(which)));
+            builder.setTitle(getString(R.string.custom_layout_select_layout))
+                    .setItems(layoutNames.toArray(new String[0]), 
+                            (dialog, which) -> PreferencesUtils.setDefaultLayout(layoutNames.get(which)));
             builder.create().show();
             return true;
         }
@@ -308,6 +311,10 @@ public class TrackRecordingActivity extends AbstractActivity implements ChooseAc
         if (item.getItemId() == R.id.track_detail_settings) {
             Intent intent = IntentUtils.newIntent(this, SettingsActivity.class);
             startActivity(intent);
+            return true;
+        }
+
+        if (TrackMenuUtils.handleTrackMenuAction(this, item, trackId)) {
             return true;
         }
 
