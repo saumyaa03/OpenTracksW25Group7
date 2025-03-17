@@ -13,58 +13,25 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 -->
-<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
-
-        <com.google.android.material.search.SearchBar
-            android:id="@+id/marker_list_toolbar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            app:navigationIcon="@drawable/ic_marker_show_24dp"
-            app:layout_behavior="@string/searchbar_scrolling_view_behavior"
-            app:menu="@menu/marker_list" />
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <com.google.android.material.search.SearchView
-        android:id="@+id/marker_list_search_view"
+    <ListView
+        android:id="@+id/marker_list"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:hint="@string/menu_search"
-        app:layout_anchor="@id/marker_list_toolbar">
-        <!-- Search suggestions/results go here (ScrollView, RecyclerView, etc.). -->
-    </com.google.android.material.search.SearchView>
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="0.5dp"
+        android:padding="8dp" />
 
-    <LinearLayout
+    <TextView
+        android:id="@+id/marker_list_empty"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:paddingBottom="?attr/actionBarSize"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:gravity="center"
+        android:text="@string/marker_list_empty"
+        android:visibility="gone" />
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/marker_list"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
-
-        <TextView
-            android:id="@+id/marker_list_empty"
-            style="?attr/textAppearanceHeadline4"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:gravity="center_horizontal|center_vertical"
-            android:text="@string/marker_list_empty_message" />
-
-    </LinearLayout>
-
-    <include
-        android:id="@+id/bottom_app_bar_layout"
-        layout="@layout/bottomappbar" />
-
-</androidx.coordinatorlayout.widget.CoordinatorLayout>
+</LinearLayout>
