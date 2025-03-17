@@ -48,8 +48,8 @@ public enum TrackFileFormat {
 
         @Override
         public TrackExporter createTrackExporter(@NonNull Context context, @NonNull ContentProviderUtils contentProviderUtils) {
-            KMLTrackExporter exporter = new KMLTrackExporter(context, contentProviderUtils, EXPORT_PHOTOS);
-            return new KmzTrackExporter(context, contentProviderUtils, exporter, EXPORT_PHOTOS);
+            KMLTrackExporter exporter = new KMLTrackExporter(context, contentProviderUtils, exportPhotos);
+            return new KmzTrackExporter(context, contentProviderUtils, exporter, exportPhotos);
         }
 
         @Override
@@ -63,7 +63,7 @@ public enum TrackFileFormat {
 
         @Override
         public boolean includesPhotos() {
-            return EXPORT_PHOTOS;
+            return exportPhotos;
         }
     },
 
