@@ -42,12 +42,13 @@ public enum TrackFileFormat {
     },
 
     @Deprecated //TODO Check if we really need this
-    KMZ_WITH_TRACKDETAIL_AND_SENSORDATA("KMZ_WITH_TRACKDETAIL_AND_SENSORDATA", false){
+    KMZ_WITH_TRACKDETAIL_AND_SENSORDATA("KMZ_WITH_TRACKDETAIL_AND_SENSORDATA"){
 
-        private static final boolean exportPhotos = false;
+        private static final boolean EXPORT_PHOTOS = false;
         
         @Override
         public TrackExporter createTrackExporter(@NonNull Context context, @NonNull ContentProviderUtils contentProviderUtils) {
+            boolean exportPhotos = false;
             KMLTrackExporter exporter = new KMLTrackExporter(context, contentProviderUtils, exportPhotos);
             return new KmzTrackExporter(context, contentProviderUtils, exporter, exportPhotos);
         }
@@ -63,6 +64,7 @@ public enum TrackFileFormat {
 
         @Override
         public boolean includesPhotos() {
+            boolean exportPhotos = false;
             return exportPhotos;
         }
     },
@@ -134,13 +136,13 @@ public enum TrackFileFormat {
 
     TrackFileFormat(String preferenceId) {
         this.preferenceId = preferenceId;
-        this.exportPhotos = exportPhotos;
+        // this.exportPhotos = exportPhotos;
     }
 
-    public TrackExporter createTrackExporter(@NonNull Context context, @NonNull ContentProviderUtils contentProviderUtils) {
-        KMLTrackExporter exporter = new KMLTrackExporter(context, contentProviderUtils, exportPhotos);
-        return new KmzTrackExporter(context, contentProviderUtils, exporter, exportPhotos);
-    }
+    // public TrackExporter createTrackExporter(@NonNull Context context, @NonNull ContentProviderUtils contentProviderUtils) {
+    //     KMLTrackExporter exporter = new KMLTrackExporter(context, contentProviderUtils, exportPhotos);
+    //     return new KmzTrackExporter(context, contentProviderUtils, exporter, exportPhotos);
+    // }
     
     public static Map<String, String> toPreferenceIdLabelMap(final Resources resources, final TrackFileFormat ... trackFileFormats) {
         Map<String, String> preferenceIdLabelMap = new LinkedHashMap<>(trackFileFormats.length);
