@@ -539,7 +539,7 @@ public class PreferencesUtils {
     private static String[] formatDistanceEntries(Resources resources, String[] entryValues, int defaultValue, Integer... specialValues) {
         String[] entries = new String[entryValues.length];
         UnitSystem unitSystem = getUnitSystem();
-        
+
         DistanceFormatter formatter = DistanceFormatter.Builder()
                 .setDecimalCount(0)
                 .setThreshold(Double.MAX_VALUE)
@@ -549,8 +549,8 @@ public class PreferencesUtils {
         for (int i = 0; i < entryValues.length; i++) {
             int value = Integer.parseInt(entryValues[i]);
             Distance distance = Distance.of(1).multipliedBy(value);
+
             String displayValue = formatter.formatDistance(distance);
-    
             switch (unitSystem) {
                 case METRIC, IMPERIAL_METER -> {
                     if (value == defaultValue) {
