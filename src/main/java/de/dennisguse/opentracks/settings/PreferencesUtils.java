@@ -560,12 +560,12 @@ public class PreferencesUtils {
                     } else if (specialValues.length > 1 && value == specialValues[1]) {
                         entries[i] = resources.getString(R.string.value_integer_meter_poor_gps, value);
                     } else {
-                        for (int j = 0; j < specialValues.length; j++) {
-                            if (value == specialValues[j]) {
-                                entries[i] = resources.getString(specialStrings[j], value);
-                                continue;
-                            }
-                        }
+                        // for (int j = 0; j < specialValues.length; j++) {
+                        //     if (value == specialValues[j]) {
+                        //         entries[i] = resources.getString(specialStrings[j], value);
+                        //         continue;
+                        //     }
+                        // }
                         entries[i] = displayValue;
                     }
                 }
@@ -575,12 +575,12 @@ public class PreferencesUtils {
                     } else if (specialValues.length > 0 && value == specialValues[0]) {
                         entries[i] = resources.getString(R.string.value_integer_feet_excellent_gps, (int) distance.toFT());
                     } else {
-                        for (int j = 0; j < specialValues.length; j++) {
-                            if (value == specialValues[j]) {
-                                entries[i] = resources.getString(specialStrings[j], valueInFeet);
-                                continue;
-                            }
-                        }
+                        // for (int j = 0; j < specialValues.length; j++) {
+                        //     if (value == specialValues[j]) {
+                        //         entries[i] = resources.getString(specialStrings[j], valueInFeet);
+                        //         continue;
+                        //     }
+                        // }
                         entries[i] = displayValue;
                     }
                 }
@@ -626,6 +626,11 @@ public class PreferencesUtils {
         return entries;
     }
     // change 2
+    public static Distance getThresholdHorizontalAccuracy() {
+        final int RECORDING_GPS_ACCURACY = Integer.parseInt(resources.getString(R.string.recording_gps_accuracy_default));
+        return Distance.of(getInt(R.string.recording_gps_accuracy_key, RECORDING_GPS_ACCURACY));
+    }
+    
     static String[] getThresholdHorizontalAccuracyEntries() {
         String[] entryValues = resources.getStringArray(R.array.recording_gps_accuracy_values);
         int recordingGPSAccuracyDefault = Integer.parseInt(resources.getString(R.string.recording_gps_accuracy_default));
