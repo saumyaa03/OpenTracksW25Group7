@@ -535,6 +535,7 @@ public class PreferencesUtils {
         return Distance.of(getInt(R.string.max_recording_distance_key, MAX_RECORDING_DISTANCE));
     }
 
+    // helper method
     private static String[] formatDistanceEntries(Resources resources, String[] entryValues, int defaultValue, Integer... specialValues) {
         String[] entries = new String[entryValues.length];
         UnitSystem unitSystem = getUnitSystem();
