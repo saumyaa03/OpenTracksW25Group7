@@ -535,11 +535,8 @@ public class PreferencesUtils {
         return Distance.of(getInt(R.string.max_recording_distance_key, MAX_RECORDING_DISTANCE));
     }
 
-    static String[] getMaxRecordingDistanceEntries() {
-        String[] entryValues = resources.getStringArray(R.array.max_recording_distance_values);
+    private static String[] formatDistanceEntries(Resources resources, String[] entryValues, int defaultValue, Integer... specialValues) {
         String[] entries = new String[entryValues.length];
-
-        final int maxRecordingDistanceDefault = Integer.parseInt(resources.getString(R.string.max_recording_distance_default));
         UnitSystem unitSystem = getUnitSystem();
 
         DistanceFormatter formatter = DistanceFormatter.Builder()
