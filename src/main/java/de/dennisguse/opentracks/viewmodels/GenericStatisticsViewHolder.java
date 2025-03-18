@@ -183,19 +183,6 @@ public abstract class GenericStatisticsViewHolder extends StatisticViewHolder<St
             updateSpeedOrPaceView(unitSystem, data, true, R.string.stats_average_moving_speed);
         }   
 
-        // @Override
-        // public void onChanged(UnitSystem unitSystem, RecordingData data) {
-        //     SpeedFormatter speedFormatterSpeed = SpeedFormatter.Builder()
-        //             .setUnit(unitSystem)
-        //             .setReportSpeedOrPace(false)
-        //             .build(getContext());
-
-        //     Pair<String, String> valueAndUnit = speedFormatterSpeed.getSpeedParts(data.getTrackStatistics().getAverageMovingSpeed());
-
-        //     getBinding().statsValue.setText(valueAndUnit.first);
-        //     getBinding().statsUnit.setText(valueAndUnit.second);
-        //     getBinding().statsDescriptionMain.setText(getContext().getString(R.string.stats_average_moving_pace));
-        // }
     }
 
     public static class AveragePace extends GenericStatisticsViewHolder {
@@ -204,20 +191,6 @@ public abstract class GenericStatisticsViewHolder extends StatisticViewHolder<St
             updateSpeedOrPaceView(unitSystem, data, false, R.string.stats_average_pace);
         }
 
-
-        // @Override
-        // public void onChanged(UnitSystem unitSystem, RecordingData data) {
-        //     SpeedFormatter speedFormatterSpeed = SpeedFormatter.Builder()
-        //             .setUnit(unitSystem)
-        //             .setReportSpeedOrPace(false)
-        //             .build(getContext());
-
-        //     Pair<String, String> valueAndUnit = speedFormatterSpeed.getSpeedParts(data.getTrackStatistics().getAverageMovingSpeed());
-
-        //     getBinding().statsValue.setText(valueAndUnit.first);
-        //     getBinding().statsUnit.setText(valueAndUnit.second);
-        //     getBinding().statsDescriptionMain.setText(getContext().getString(R.string.stats_average_pace));
-        // }
     }
 
     public static class FastestPace extends GenericStatisticsViewHolder {
