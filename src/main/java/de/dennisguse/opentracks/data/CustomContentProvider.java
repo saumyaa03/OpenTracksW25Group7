@@ -154,10 +154,18 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
             int deletedRowsFromTable;
             try {
                 db.beginTransaction();
+                if (where != null && !where.isEmpty()) {
+                    if (containsUnsafeCharacters(where)) {
+                        throw new IllegalArgumentException("Unsafe characters detected in where clause.");
+                    }
+                }
                 deletedRowsFromTable = db.delete(table, where, selectionArgs);
                 Log.i(TAG, "Deleted " + deletedRowsFromTable + " rows of table " + table);
                 db.setTransactionSuccessful();
-            } finally {
+            } catch (SQLException e) {
+                Log.e(TAG, "Error during delete operation.", e);
+                throw e;
+            }finally {
                 db.endTransaction();
             }
             getContext().getContentResolver().notifyChange(url, null, false);
@@ -174,6 +182,9 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
             }
     
             return deletedRowsFromTable;
+        }
+        private boolean containsUnsafeCharacters(String input) {
+            return input.contains(";") || input.contains("--") || input.contains("'") || input.contains("\"");
         }
     
         private int getTotalChanges() {
