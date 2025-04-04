@@ -148,6 +148,8 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
                 case MARKERS -> MarkerColumns.TABLE_NAME;
                 default -> throw new IllegalArgumentException("Unknown URL " + url);
             };
+            SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+            qb.setTables(table);
             if (containsUnsafeCharacters(where)) {
                 throw new IllegalArgumentException("Unsafe characters detected in where clause.");
             }
@@ -165,7 +167,7 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
             int deletedRowsFromTable;
             try {
                 db.beginTransaction();
-                deletedRowsFromTable = db.delete(table, where, selectionArgs);
+                deletedRowsFromTable = qb.delete(table, where, selectionArgs);
                 Log.i(TAG, "Deleted " + deletedRowsFromTable + " rows of table " + table);
                 db.setTransactionSuccessful();
             }finally {
