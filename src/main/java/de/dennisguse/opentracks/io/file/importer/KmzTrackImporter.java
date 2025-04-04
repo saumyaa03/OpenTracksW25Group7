@@ -235,8 +235,14 @@ public class KmzTrackImporter {
             return;
         }
 
+        fileName = sanitizeFilename(fileName);
+
         File dir = FileUtils.getPhotoDir(context, trackId);
         File file = new File(dir, fileName);
+        if (!file.getCanonicalPath().startsWith(dir.getCanonicalPath())) {
+            throw new SecurityException("Attempted path traversal attack");
+        }
+    
 
         try (FileOutputStream fileOutputStream = new FileOutputStream(file)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -249,5 +255,16 @@ public class KmzTrackImporter {
                 }
             }
         }
+    }
+
+    private String sanitizeFilename(String fileName) {
+        fileName = fileName.replace("../", "_")
+                          .replace("./", "_")
+                          .replace("/", "_")
+                          .replace("\\", "_");
+    
+        fileName = fileName.replaceAll("[^a-zA-Z0-9.-]", "_");
+    
+        return fileName;
     }
 }
