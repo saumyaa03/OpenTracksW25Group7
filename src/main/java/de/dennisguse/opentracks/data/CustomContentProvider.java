@@ -151,6 +151,14 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
             if (containsUnsafeCharacters(where)) {
                 throw new IllegalArgumentException("Unsafe characters detected in where clause.");
             }
+
+            if (selectionArgs != null) {
+                for (String arg : selectionArgs) {
+                    if (containsUnsafeCharacters(arg)) {
+                        throw new IllegalArgumentException("Unsafe characters detected in selection arguments.");
+                    }
+                }
+            }
     
             Log.w(TAG, "Deleting from table " + table);
             int totalChangesBefore = getTotalChanges();
