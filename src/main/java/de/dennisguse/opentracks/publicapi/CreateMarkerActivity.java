@@ -3,8 +3,6 @@ package de.dennisguse.opentracks.publicapi;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
-import android.util.Log;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -25,27 +23,11 @@ public class CreateMarkerActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Defensive checks to break the tainted data flow flagged by snyk
-        Intent incomingIntent = getIntent();
-        if(incomingIntent == null || !incomingIntent.hasExtra(EXTRA_TRACK_ID) || !incomingIntent.hasExtra(EXTRA_LOCATION)){
-            Log.w("CreateMarkerActivity", "Missing track ID or location in intent extras.");
-            Toast.makeText(this, "Invalid input data. Cannot continue.", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
+        Track.Id trackId = new Track.Id(getIntent().getLongExtra(EXTRA_TRACK_ID, -1L));
+        Location location = getIntent().getParcelableExtra(EXTRA_LOCATION);
+        if (!getIntent().hasExtra(EXTRA_TRACK_ID) || location == null) {
+            throw new IllegalStateException("Parameter 'track_id' and/or 'location' missing or invalid.");
         }
-
-        long trackIdValue = incomingIntent.getLongExtra(EXTRA_TRACK_ID, -1L);
-        Location location = incomingIntent.getParcelableExtra(EXTRA_LOCATION);
-
-        // Validate track ID and location
-        if (trackIdValue == -1L || location == null) {
-            Log.w("CreateMarkerActivity", "trackId is invalid or location is null.");
-            Toast.makeText(this, "Invalid input values. Cannot continue.", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
-        }
-
-        Track.Id trackId = new Track.Id(trackIdValue);
 
         TrackRecordingServiceConnection.execute(this, (service, self) -> {
             Intent intent = IntentUtils
