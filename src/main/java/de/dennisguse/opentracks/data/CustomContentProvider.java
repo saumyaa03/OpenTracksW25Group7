@@ -148,23 +148,18 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
                 case MARKERS -> MarkerColumns.TABLE_NAME;
                 default -> throw new IllegalArgumentException("Unknown URL " + url);
             };
+            if (containsUnsafeCharacters(where)) {
+                throw new IllegalArgumentException("Unsafe characters detected in where clause.");
+            }
     
             Log.w(TAG, "Deleting from table " + table);
             int totalChangesBefore = getTotalChanges();
             int deletedRowsFromTable;
             try {
                 db.beginTransaction();
-                if (where != null && !where.isEmpty()) {
-                    if (containsUnsafeCharacters(where)) {
-                        throw new IllegalArgumentException("Unsafe characters detected in where clause.");
-                    }
-                }
                 deletedRowsFromTable = db.delete(table, where, selectionArgs);
                 Log.i(TAG, "Deleted " + deletedRowsFromTable + " rows of table " + table);
                 db.setTransactionSuccessful();
-            } catch (SQLException e) {
-                Log.e(TAG, "Error during delete operation.", e);
-                throw e;
             }finally {
                 db.endTransaction();
             }
@@ -184,7 +179,26 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
             return deletedRowsFromTable;
         }
         private boolean containsUnsafeCharacters(String input) {
-            return input.contains(";") || input.contains("--") || input.contains("'") || input.contains("\"");
+            if(input==null){
+                return false;
+            }
+            String[] unsafePatterns = {
+                    "--",
+                    ";",
+                    "'",
+                    "\"",
+                    "DROP",
+                    "DELETE",
+                    "INSERT",
+                    "UPDATE",
+                    "SELECT"
+            };
+            for (String pattern : unsafePatterns) {
+                if (input.contains(pattern)) {
+                    return true;
+                }
+            }
+            return false;
         }
     
         private int getTotalChanges() {
