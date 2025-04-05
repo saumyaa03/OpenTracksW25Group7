@@ -183,7 +183,10 @@ public class TrackRecordedActivity extends AbstractTrackDeleteActivity implement
         if (item.getItemId() == R.id.track_detail_markers) {
             Intent intent = IntentUtils.newIntent(this, MarkerListActivity.class)
                     .putExtra(MarkerListActivity.EXTRA_TRACK_ID, trackId);
-            startActivity(intent);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivity(intent);
+            }
             return true;
         }
 
