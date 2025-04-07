@@ -98,9 +98,18 @@ public class MarkerEditActivity extends AbstractActivity {
         trackId = getIntent().getParcelableExtra(EXTRA_TRACK_ID);
         location = getIntent().getParcelableExtra(EXTRA_LOCATION);
         markerId = getIntent().getParcelableExtra(EXTRA_MARKER_ID);
+        
         if ((trackId == null || location == null) && markerId == null) {
             throw new IllegalStateException("TrackId and Location must be provided or an existing markerId");
         }
+        
+        // 🔐 Validate that trackId is safe (when supplied)
+        if (trackId != null && !isValidTrackId(trackId)) {
+            Log.e(TAG, "Invalid or unsafe trackId received: " + trackId);
+            Toast.makeText(this, "Invalid track ID", Toast.LENGTH_LONG).show();
+            finish();
+            return;
+        }        
 
         if (savedInstanceState != null) {
             cameraPhotoUri = Uri.parse(savedInstanceState.getString(CAMERA_PHOTO_URI_KEY, ""));
@@ -168,6 +177,12 @@ public class MarkerEditActivity extends AbstractActivity {
 
         setSupportActionBar(viewBinding.bottomAppBarLayout.bottomAppBar);
     }
+
+    private boolean isValidTrackId(Track.Id id) {
+        String idStr = id.toString();
+        // Allow only alphanumeric and dash (like UUIDs)
+        return idStr.matches("^[a-zA-Z0-9\\-]{1,100}$");
+    }    
 
     private LiveData<Marker> createNewMarker() {
         TrackPoint trackPoint = new TrackPoint(location, Instant.now());
@@ -280,6 +295,13 @@ public class MarkerEditActivity extends AbstractActivity {
             return;
         }
     
+        // 🔐 Redundant but Snyk-visible validation to block path traversal
+        String idStr = resolvedTrackId.toString();
+        if (!idStr.matches("^[a-zA-Z0-9\\-]{1,100}$")) {
+            Toast.makeText(this, "Invalid track ID", Toast.LENGTH_LONG).show();
+            return;
+        }
+    
         Pair<Intent, Uri> intentAndPhotoUri = MarkerUtils.createTakePictureIntent(this, resolvedTrackId);
         cameraPhotoUri = intentAndPhotoUri.second;
     
@@ -294,6 +316,7 @@ public class MarkerEditActivity extends AbstractActivity {
             Toast.makeText(this, R.string.no_compatible_camera_installed, Toast.LENGTH_LONG).show();
         }
     }
+    
 
     private boolean isSafeUri(Uri uri) {
         if (uri == null) return false;

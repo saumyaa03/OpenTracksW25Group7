@@ -40,26 +40,25 @@ public class MarkerUtils {
     /**
      * Sends a take picture request to the camera app.
      * The picture is then stored in the track's folder.
-     *
-     * @param context the context
-     * @param trackId the track id
      */
     static Pair<Intent, Uri> createTakePictureIntent(Context context, Track.Id trackId) {
-        File dir = FileUtils.getPhotoDir(context, trackId);
+        File dir = getValidatedPhotoDir(context, trackId);
 
         String fileName = SimpleDateFormat.getDateTimeInstance().format(new Date());
         File file = new File(dir, FileUtils.buildUniqueFileName(dir, fileName, JPEG_EXTENSION));
 
         Uri photoUri = FileProvider.getUriForFile(context, FileUtils.FILEPROVIDER, file);
         Log.d(TAG, "Taking photo to URI: " + photoUri);
+
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE)
                 .putExtra(MediaStore.EXTRA_OUTPUT, photoUri);
+
         return new Pair<>(intent, photoUri);
     }
 
     @VisibleForTesting(otherwise = 3)
     public static String getImageUrl(Context context, Track.Id trackId) {
-        File dir = FileUtils.getPhotoDir(context, trackId);
+        File dir = getValidatedPhotoDir(context, trackId);
 
         String fileName = SimpleDateFormat.getDateTimeInstance().format(new Date());
         File file = new File(dir, FileUtils.buildUniqueFileName(dir, fileName, JPEG_EXTENSION));
@@ -67,15 +66,6 @@ public class MarkerUtils {
         return file.getAbsolutePath();
     }
 
-    /**
-     * Checks that there is a file inside track photo directory whose name is the same that uri file.
-     * If there is a file inside photo directory whose name is the same that uri then returns File. Otherwise returns null.
-     *
-     * @param context the Context.
-     * @param trackId the id of the Track.
-     * @param uri     the uri to check.
-     * @return File object or null.
-     */
     public static File getPhotoFileIfExists(Context context, Track.Id trackId, Uri uri) {
         if (uri == null) {
             Log.w(TAG, "URI object is null.");
@@ -88,13 +78,9 @@ public class MarkerUtils {
             return null;
         }
 
-        File dir = FileUtils.getPhotoDir(context, trackId);
+        File dir = getValidatedPhotoDir(context, trackId);
         File file = new File(dir, filename);
-        if (!file.exists()) {
-            return null;
-        }
-
-        return file;
+        return file.exists() ? file : null;
     }
 
     @Nullable
@@ -110,7 +96,33 @@ public class MarkerUtils {
             return null;
         }
 
-        File dir = FileUtils.getPhotoDir(context, trackId);
+        File dir = getValidatedPhotoDir(context, trackId);
         return new File(dir, filename);
+    }
+
+    /**
+     * Safely constructs and validates the directory for storing marker photos.
+     * Ensures path is within the app's external file space.
+     */
+    private static File getValidatedPhotoDir(Context context, Track.Id trackId) {
+        File baseDir = new File(context.getExternalFilesDir(null), "marker_photos");
+        File dir = new File(baseDir, trackId.toString());
+
+        try {
+            String canonicalBase = baseDir.getCanonicalPath() + File.separator;
+            String canonicalDir = dir.getCanonicalPath();
+
+            if (!canonicalDir.startsWith(canonicalBase)) {
+                throw new SecurityException("Invalid trackId: path traversal detected");
+            }
+
+            if (!dir.exists() && !dir.mkdirs()) {
+                Log.w(TAG, "Could not create directory: " + dir.getAbsolutePath());
+            }
+
+            return dir;
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to validate or create photo directory", e);
+        }
     }
 }
