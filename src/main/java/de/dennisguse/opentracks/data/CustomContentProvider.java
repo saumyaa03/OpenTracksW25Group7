@@ -318,82 +318,68 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
         @Override
         public int update(@NonNull Uri url, ContentValues values, String where, String[] selectionArgs) {
             String table;
-            String whereClause = null;
-            String[] safeArgs = null;
-
+            String whereClause;
+        
             switch (getUrlType(url)) {
+                case TRACKPOINTS -> {
+                    table = TrackPointsColumns.TABLE_NAME;
+                    whereClause = where;
+                }
                 case TRACKPOINTS_BY_ID -> {
                     table = TrackPointsColumns.TABLE_NAME;
-                    String id = String.valueOf(ContentUris.parseId(url));
-                    whereClause = TrackPointsColumns._ID + "=?";
-                    safeArgs = !TextUtils.isEmpty(where) ? mergeArgs(new String[]{id}, new String[]{escapeWhereClause(where)}) : new String[]{id};
+                    whereClause = TrackPointsColumns._ID + "=" + ContentUris.parseId(url);
+                    if (!TextUtils.isEmpty(where)) {
+                        whereClause += " AND (" + where + ")";
+                    }
+                }
+                case TRACKS -> {
+                    table = TracksColumns.TABLE_NAME;
+                    whereClause = where;
                 }
                 case TRACKS_BY_ID -> {
                     table = TracksColumns.TABLE_NAME;
-                    String id = String.valueOf(ContentUris.parseId(url));
-                    whereClause = TracksColumns._ID + "=?";
-                    safeArgs = !TextUtils.isEmpty(where) ? mergeArgs(new String[]{id}, new String[]{escapeWhereClause(where)}) : new String[]{id};
+                    whereClause = TracksColumns._ID + "=" + ContentUris.parseId(url);
+                    if (!TextUtils.isEmpty(where)) {
+                        whereClause += " AND (" + where + ")";
+                    }
+                }
+                case MARKERS -> {
+                    table = MarkerColumns.TABLE_NAME;
+                    whereClause = where;
                 }
                 case MARKERS_BY_ID -> {
                     table = MarkerColumns.TABLE_NAME;
-                    String id = String.valueOf(ContentUris.parseId(url));
-                    whereClause = MarkerColumns._ID + "=?";
-                    safeArgs = !TextUtils.isEmpty(where) ? mergeArgs(new String[]{id}, new String[]{escapeWhereClause(where)}) : new String[]{id};
-                }
-                case TRACKPOINTS, TRACKS, MARKERS -> {
-                    table = switch (getUrlType(url)) {
-                        case TRACKPOINTS -> TrackPointsColumns.TABLE_NAME;
-                        case TRACKS -> TracksColumns.TABLE_NAME;
-                        case MARKERS -> MarkerColumns.TABLE_NAME;
-                        default -> throw new IllegalStateException();
-                    };
-
+                    whereClause = MarkerColumns._ID + "=" + ContentUris.parseId(url);
                     if (!TextUtils.isEmpty(where)) {
-                        whereClause = escapeWhereClause(where);
+                        whereClause += " AND (" + where + ")";
                     }
-                    safeArgs = selectionArgs;
                 }
                 default -> throw new IllegalArgumentException("Unknown url " + url);
             }
-
+        
+            // SQL injection mitigation
+            if (whereClause != null && containsUnsafeCharacters(whereClause)) {
+                throw new IllegalArgumentException("Unsafe characters detected in WHERE clause.");
+            }
+        
             int count;
             try {
                 db.beginTransaction();
-                count = db.update(table, values, whereClause, safeArgs);
+                count = db.update(table, values, whereClause, selectionArgs);
                 db.setTransactionSuccessful();
             } finally {
                 db.endTransaction();
             }
-
+        
             getContext().getContentResolver().notifyChange(url, null, false);
             return count;
         }
-
-                /**
-         * Merges two arrays of SQL selection arguments.
-         */
-        private String[] mergeArgs(String[] first, String[] second) {
-            if (second == null || second.length == 0) return first;
-            String[] result = new String[first.length + second.length];
-            System.arraycopy(first, 0, result, 0, first.length);
-            System.arraycopy(second, 0, result, first.length, second.length);
-            return result;
+        
+        private boolean containsUnsafeCharacters(String input) {
+            // You can refine this allowlist
+            return input.matches(".*[;\"'\\\\].*"); // disallow ; " ' \
         }
-
-        /**
-         * Escapes dangerous characters in WHERE clauses to prevent SQL injection.
-         */
-        private String escapeWhereClause(String input) {
-            if (input == null) return null;
-        
-            // Allow common SQL syntax and prevent dangerous patterns
-            String lower = input.toLowerCase();
-            if (lower.contains(";") || lower.contains("--") || lower.contains("'") || lower.contains("\"") || lower.contains("\\")) {
-                throw new IllegalArgumentException("Unsafe characters detected in WHERE clause.");
-            }
-        
-            return input;
-        }        
+                
                  
         @NonNull
         private UrlType getUrlType(Uri url) {
