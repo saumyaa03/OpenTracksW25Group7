@@ -371,7 +371,8 @@ public int delete(@NonNull Uri url, String where, String[] selectionArgs) {
                     Log.w("CustomContentProvider", "Rejecting update operation with null whereClause or selectionArgs");
                 }
                 db.setTransactionSuccessful();
-            } finally {
+            } 
+            finally {
                 db.endTransaction();
             }
 
