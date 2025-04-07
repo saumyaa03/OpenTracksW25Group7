@@ -30,8 +30,6 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Log;
-import java.util.List;
-import java.util.ArrayList;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.VisibleForTesting;
