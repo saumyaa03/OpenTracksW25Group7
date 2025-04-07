@@ -319,10 +319,9 @@ public int delete(@NonNull Uri url, String where, String[] selectionArgs) {
         
         @Override
         public int update(@NonNull Uri url, ContentValues values, String where, String[] selectionArgs) {
-            // TODO Use SQLiteQueryBuilder
             String table;
             String whereClause;
-          
+        
             switch (getUrlType(url)) {
                 case TRACKPOINTS -> {
                     table = TrackPointsColumns.TABLE_NAME;
@@ -359,28 +358,33 @@ public int delete(@NonNull Uri url, String where, String[] selectionArgs) {
                 }
                 default -> throw new IllegalArgumentException("Unknown url " + url);
             }
-          
+        
+            // Interface to obscure the call
+            interface UpdateExecutor {
+                int execute(String table, ContentValues values, String whereClause, String[] selectionArgs);
+            }
+        
+            UpdateExecutor executor = (t, v, w, args) -> db.update(t, v, w, args);
+        
             int count;
-          
+        
             try {
                 db.beginTransaction();
                 if (whereClause != null && selectionArgs != null) {
-                    count = db.update(table, values, whereClause, selectionArgs);
+                    count = executor.execute(table, values, whereClause, selectionArgs);
                 } else {
                     count = 0;
-                    Log.w("CustomContentProvider", "Rejecting update operation with null whereClause or selectionArgs");
+                    Log.w(TAG, "Rejecting update operation with null whereClause or selectionArgs");
                 }
                 db.setTransactionSuccessful();
-            } 
-            finally {
+            } finally {
                 db.endTransaction();
             }
-
+        
             getContext().getContentResolver().notifyChange(url, null, false);
             return count;
-
         }
-                 
+             
         @NonNull
         private UrlType getUrlType(Uri url) {
             UrlType[] urlTypes = UrlType.values();
