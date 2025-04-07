@@ -379,10 +379,18 @@ public int delete(@NonNull Uri url, String where, String[] selectionArgs) {
         }
 
         private boolean containsUnsafeCharacters(String input) {
-            // Refine this allowlist as needed
-            return input.matches(".*[;\"'\\\\].*"); // disallow ; " ' \
+            if (input == null) return false;
+        
+            // Disallowed characters: ; " ' \
+            for (int i = 0; i < input.length(); i++) {
+                char c = input.charAt(i);
+                if (c == ';' || c == '"' || c == '\'' || c == '\\') {
+                    return true;
+                }
+            }
+            return false;
         }
-
+          
                  
         @NonNull
         private UrlType getUrlType(Uri url) {
