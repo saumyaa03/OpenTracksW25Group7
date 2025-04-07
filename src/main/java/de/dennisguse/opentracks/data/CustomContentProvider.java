@@ -322,7 +322,7 @@ public int delete(@NonNull Uri url, String where, String[] selectionArgs) {
             // TODO Use SQLiteQueryBuilder
             String table;
             String whereClause;
-          
+
             switch (getUrlType(url)) {
                 case TRACKPOINTS -> {
                     table = TrackPointsColumns.TABLE_NAME;
@@ -359,9 +359,13 @@ public int delete(@NonNull Uri url, String where, String[] selectionArgs) {
                 }
                 default -> throw new IllegalArgumentException("Unknown url " + url);
             }
-          
+
+            // SQL injection mitigation
+            if (whereClause != null && containsUnsafeCharacters(whereClause)) {
+                throw new IllegalArgumentException("Unsafe characters detected in WHERE clause.");
+            }
+
             int count;
-          
             try {
                 db.beginTransaction();
                 count = db.update(table, values, whereClause, selectionArgs);
@@ -372,8 +376,13 @@ public int delete(@NonNull Uri url, String where, String[] selectionArgs) {
 
             getContext().getContentResolver().notifyChange(url, null, false);
             return count;
-
         }
+
+        private boolean containsUnsafeCharacters(String input) {
+            // Refine this allowlist as needed
+            return input.matches(".*[;\"'\\\\].*"); // disallow ; " ' \
+        }
+
                  
         @NonNull
         private UrlType getUrlType(Uri url) {
