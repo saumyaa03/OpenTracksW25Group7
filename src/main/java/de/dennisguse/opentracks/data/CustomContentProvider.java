@@ -376,10 +376,18 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
         }
         
         private boolean containsUnsafeCharacters(String input) {
-            // You can refine this allowlist
-            return input.matches(".*[;\"'\\\\].*"); // disallow ; " ' \
+            if (input == null) return false;
+        
+            // Disallowed characters: ; " ' \
+            for (int i = 0; i < input.length(); i++) {
+                char c = input.charAt(i);
+                if (c == ';' || c == '"' || c == '\'' || c == '\\') {
+                    return true;
+                }
+            }
+            return false;
         }
-                
+           
                  
         @NonNull
         private UrlType getUrlType(Uri url) {
