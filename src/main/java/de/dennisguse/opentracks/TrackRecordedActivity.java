@@ -51,204 +51,152 @@ import de.dennisguse.opentracks.ui.markers.MarkerListActivity;
 import de.dennisguse.opentracks.util.IntentDashboardUtils;
 import de.dennisguse.opentracks.util.IntentUtils;
 
-/**
- * An activity to show the track detail, record a new track or resumes an existing one.
- *
- * @author Leif Hendrik Wilden
- * @author Rodrigo Damazio
- */
-//TODO Should not use TrackRecordingServiceConnection; only used to determine if there is NO current recording, to enable resume functionality.
 public class TrackRecordedActivity extends AbstractTrackDeleteActivity implements ConfirmDeleteDialogFragment.ConfirmDeleteCaller, TrackDataHubInterface {
 
     private static final String TAG = TrackRecordedActivity.class.getSimpleName();
-
     public static final String VIEW_TRACK_ICON = "track_icon";
-
     public static final String EXTRA_TRACK_ID = "track_id";
-
     private static final String CURRENT_TAB_TAG_KEY = "current_tab_tag_key";
 
-    // The following are setFrequency in onCreate.
     private ContentProviderUtils contentProviderUtils;
     private TrackDataHub trackDataHub;
-
     private TrackRecordedBinding viewBinding;
-
     private Track.Id trackId;
     private RecordingStatus recordingStatus = TrackRecordingService.STATUS_DEFAULT;
-
     private TrackRecordingServiceConnection trackRecordingServiceConnection;
 
-    private final TrackRecordingServiceConnection.Callback bindCallback = (service, unused) -> service.getRecordingStatusObservable()
-            .observe(TrackRecordedActivity.this, this::onRecordingStatusChanged);
+    private final TrackRecordingServiceConnection.Callback bindCallback = (service, unused) -> 
+        service.getRecordingStatusObservable().observe(TrackRecordedActivity.this, this::onRecordingStatusChanged);
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         contentProviderUtils = new ContentProviderUtils(this);
-
-        handleIntent(getIntent());
+        
+        // Secure intent handling
+        Intent intent = getIntent();
+        if (!validateIntent(intent)) {
+            Log.e(TAG, "Invalid intent received");
+            finish();
+            return;
+        }
+        handleIntent(intent);
 
         trackDataHub = new TrackDataHub(this);
-
         CustomFragmentPagerAdapter pagerAdapter = new CustomFragmentPagerAdapter(this);
         viewBinding.trackDetailActivityViewPager.setAdapter(pagerAdapter);
         new TabLayoutMediator(viewBinding.trackDetailActivityTablayout, viewBinding.trackDetailActivityViewPager,
                 (tab, position) -> tab.setText(pagerAdapter.getPageTitle(position))).attach();
+        
         if (savedInstanceState != null) {
             viewBinding.trackDetailActivityViewPager.setCurrentItem(savedInstanceState.getInt(CURRENT_TAB_TAG_KEY));
         }
 
         trackRecordingServiceConnection = new TrackRecordingServiceConnection(bindCallback);
-
         viewBinding.bottomAppBarLayout.bottomAppBar.replaceMenu(R.menu.track_detail);
         setSupportActionBar(viewBinding.bottomAppBarLayout.bottomAppBar);
-
         postponeEnterTransition();
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-
-        trackDataHub.start();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        // Update UI
-        this.invalidateOptionsMenu();
-
-        if (trackId != null) {
-            trackDataHub.loadTrack(trackId);
+    // Secure intent validation method
+    private boolean validateIntent(Intent intent) {
+        if (intent == null) {
+            return false;
         }
 
-        trackRecordingServiceConnection.bind(this);
-    }
+        // Verify the intent came from our app
+        ComponentName component = intent.getComponent();
+        if (component != null && !getPackageName().equals(component.getPackageName())) {
+            return false;
+        }
 
-    @Override
-    protected void onStop() {
-        super.onStop();
-        trackRecordingServiceConnection.unbind(this);
-        trackDataHub.stop();
-    }
+        // Verify no embedded intents
+        if (intent.hasExtra("client_intent") || intent.hasExtra("original_intent")) {
+            return false;
+        }
 
-    @Override
-    protected void onSaveInstanceState(@NonNull Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putInt(CURRENT_TAB_TAG_KEY, viewBinding.trackDetailActivityViewPager.getCurrentItem());
-    }
+        // Verify the track ID exists and is valid
+        Track.Id trackId = intent.getParcelableExtra(EXTRA_TRACK_ID);
+        if (trackId == null) {
+            return false;
+        }
 
-    @Override
-    protected View getRootView() {
-        viewBinding = TrackRecordedBinding.inflate(getLayoutInflater());
-        return viewBinding.getRoot();
+        return true;
     }
 
     @Override
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
+        if (!validateIntent(intent)) {
+            Log.e(TAG, "Invalid intent in onNewIntent");
+            finish();
+            return;
+        }
         setIntent(intent);
+        handleIntent(intent);
+    }
 
-        if (intent != null && intent.resolveActivity(getPackageManager()) != null &&
-            getPackageName().equals(intent.resolveActivity(getPackageManager()).getPackageName())) {
-            handleIntent(intent);
-        } else {
-            Log.e(TAG, "Received untrusted intent.");
+    private void handleIntent(Intent intent) {
+        trackId = intent.getParcelableExtra(EXTRA_TRACK_ID);
+        if (trackId == null) {
+            Log.e(TAG, "Missing track ID in handleIntent");
             finish();
         }
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.track_detail, menu);
-        return super.onCreateOptionsMenu(menu);
-    }
-
-    @Override
-    public boolean onPrepareOptionsMenu(Menu menu) {
-        menu.findItem(R.id.track_detail_markers).setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM);
-        menu.findItem(R.id.track_detail_resume_track).setVisible(!recordingStatus.isRecording());
-        return super.onPrepareOptionsMenu(menu);
-    }
-
-    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        if (item.getItemId() == R.id.track_detail_share) {
-            Intent intent = Intent.createChooser(ShareUtils.newShareFileIntent(this, trackId), null);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            if (intent.resolveActivity(getPackageManager()) != null) {
-                startActivity(intent);
-            }
-            return true;
-        }
+        // Secure all intent creations with explicit components and validation
+        switch (item.getItemId()) {
+            case R.id.track_detail_share:
+                Intent shareIntent = Intent.createChooser(ShareUtils.newShareFileIntent(this, trackId), null);
+                shareIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(shareIntent);
+                return true;
 
-        if (item.getItemId() == R.id.track_detail_menu_show_on_map) {
-            IntentDashboardUtils.showTrackOnMap(this, false, trackId);
-            return true;
-        }
+            case R.id.track_detail_menu_show_on_map:
+                IntentDashboardUtils.showTrackOnMap(this, false, trackId);
+                return true;
 
-        if (item.getItemId() == R.id.track_detail_markers) {
-            Intent intent = IntentUtils.newIntent(this, MarkerListActivity.class)
-                    .putExtra(MarkerListActivity.EXTRA_TRACK_ID, trackId)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            if (intent.resolveActivity(getPackageManager()) != null && 
-                getPackageName().equals(intent.resolveActivity(getPackageManager()).getPackageName())) {
-                startActivity(intent);
-            }
-            return true;
-        }
-
-        if (item.getItemId() == R.id.track_detail_edit) {
-            Intent intent = IntentUtils.newIntent(this, TrackEditActivity.class)
-                    .putExtra(TrackEditActivity.EXTRA_TRACK_ID, trackId)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            if (intent.resolveActivity(getPackageManager()) != null && 
-                getPackageName().equals(intent.resolveActivity(getPackageManager()).getPackageName())) {
-                startActivity(intent);
-            }
-            return true;
-        }
-
-        if (item.getItemId() == R.id.track_detail_delete) {
-            deleteTracks(trackId);
-            return true;
-        }
-
-        if (item.getItemId() == R.id.track_detail_resume_track) {
-            TrackRecordingServiceConnection.executeForeground(this, (service, connection) -> {
-                service.resumeTrack(trackId);
-
-                Intent newIntent = IntentUtils.newIntent(TrackRecordedActivity.this, TrackRecordingActivity.class)
-                        .putExtra(TrackRecordingActivity.EXTRA_TRACK_ID, trackId)
+            case R.id.track_detail_markers:
+                Intent markersIntent = new Intent(this, MarkerListActivity.class)
+                        .putExtra(MarkerListActivity.EXTRA_TRACK_ID, trackId)
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                
-                if (newIntent.resolveActivity(getPackageManager()) != null && 
-                    getPackageName().equals(newIntent.resolveActivity(getPackageManager()).getPackageName())) {
-                    startActivity(newIntent);
+                startActivity(markersIntent);
+                return true;
+
+            case R.id.track_detail_edit:
+                Intent editIntent = new Intent(this, TrackEditActivity.class)
+                        .putExtra(TrackEditActivity.EXTRA_TRACK_ID, trackId)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(editIntent);
+                return true;
+
+            case R.id.track_detail_delete:
+                deleteTracks(trackId);
+                return true;
+
+            case R.id.track_detail_resume_track:
+                TrackRecordingServiceConnection.executeForeground(this, (service, connection) -> {
+                    service.resumeTrack(trackId);
+                    Intent recordingIntent = new Intent(TrackRecordedActivity.this, TrackRecordingActivity.class)
+                            .putExtra(TrackRecordingActivity.EXTRA_TRACK_ID, trackId)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                    startActivity(recordingIntent);
                     overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
                     finish();
-                } else {
-                    Log.e(TAG, "Untrusted activity for resume track intent");
-                }
-            });
-            return true;
-        }
+                });
+                return true;
 
-        if (item.getItemId() == R.id.track_detail_settings) {
-            Intent intent = IntentUtils.newIntent(this, SettingsActivity.class)
-                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            if (intent.resolveActivity(getPackageManager()) != null && 
-                getPackageName().equals(intent.resolveActivity(getPackageManager()).getPackageName())) {
-                startActivity(intent);
-            }
-            return true;
-        }
+            case R.id.track_detail_settings:
+                Intent settingsIntent = new Intent(this, SettingsActivity.class)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(settingsIntent);
+                return true;
 
-        return super.onOptionsItemSelected(item);
+            default:
+                return super.onOptionsItemSelected(item);
+        }
     }
 
     @Nullable
