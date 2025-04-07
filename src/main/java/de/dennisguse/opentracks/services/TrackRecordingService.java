@@ -14,135 +14,139 @@
  * the License.
  */
 
- package de.dennisguse.opentracks.services;
+package de.dennisguse.opentracks.services;
 
- import android.app.Notification;
- import android.app.NotificationChannel;
- import android.app.NotificationManager;
- import android.app.Service;
- import android.content.Intent;
- import android.content.SharedPreferences;
- import android.content.pm.ServiceInfo;
- import android.os.Handler;
- import android.os.Looper;
- import android.os.PowerManager.WakeLock;
- import android.util.Log;
- import android.util.Pair;
- 
- import androidx.annotation.Nullable;
- import androidx.annotation.VisibleForTesting;
- import androidx.core.app.NotificationCompat;
- import androidx.core.app.ServiceCompat;
- import androidx.lifecycle.LiveData;
- import androidx.lifecycle.MutableLiveData;
- 
- import java.io.PrintWriter;
- import java.io.StringWriter;
- import java.time.Duration;
- 
- import de.dennisguse.opentracks.R;
- import de.dennisguse.opentracks.data.ContentProviderUtils;
- import de.dennisguse.opentracks.data.models.Distance;
- import de.dennisguse.opentracks.data.models.Marker;
- import de.dennisguse.opentracks.data.models.Track;
- import de.dennisguse.opentracks.data.models.TrackPoint;
- import de.dennisguse.opentracks.sensors.sensorData.SensorDataSet;
- import de.dennisguse.opentracks.services.announcement.VoiceAnnouncementManager;
- import de.dennisguse.opentracks.services.handlers.GpsStatusValue;
- import de.dennisguse.opentracks.services.handlers.TrackPointCreator;
- import de.dennisguse.opentracks.settings.PreferencesUtils;
- import de.dennisguse.opentracks.util.SystemUtils;
- 
- public class TrackRecordingService extends Service implements TrackPointCreator.Callback, SharedPreferences.OnSharedPreferenceChangeListener, TrackRecordingManager.IdleObserver {
- 
-     private static final String TAG = TrackRecordingService.class.getSimpleName();
- 
-     private static final Duration RECORDING_DATA_UPDATE_INTERVAL = Duration.ofSeconds(1);
-     private static final int NOTIFICATION_ID = 1;
-     private static final String NOTIFICATION_CHANNEL_ID = "track_recording_channel";
- 
-     public static final RecordingStatus STATUS_DEFAULT = RecordingStatus.notRecording();
-     public static final RecordingData NOT_RECORDING = new RecordingData(null, null, null);
-     public static final GpsStatusValue STATUS_GPS_DEFAULT = GpsStatusValue.GPS_NONE;
- 
-     public TrackPoint getLastStoredTrackPointWithLocation() {
-         return trackRecordingManager.getLastStoredTrackPointWithLocation();
-     }
- 
-     public class Binder extends android.os.Binder {
-         public TrackRecordingService getService() {
-             return TrackRecordingService.this;
-         }
-     }
- 
-     private final Binder binder = new Binder();
-     private final Runnable updateRecordingData = () -> {
-         updateRecordingDataWhileRecording();
-         handler.postDelayed(this.updateRecordingData, RECORDING_DATA_UPDATE_INTERVAL.toMillis());
-     };
- 
-     private RecordingStatus recordingStatus;
-     private MutableLiveData<RecordingStatus> recordingStatusObservable;
-     private MutableLiveData<GpsStatusValue> gpsStatusObservable;
-     private MutableLiveData<RecordingData> recordingDataObservable;
- 
-     private WakeLock wakeLock;
-     private Handler handler;
- 
-     private TrackPointCreator trackPointCreator;
-     private TrackRecordingManager trackRecordingManager;
-     private VoiceAnnouncementManager voiceAnnouncementManager;
-     private TrackRecordingServiceNotificationManager notificationManager;
- 
-     @Override
-     public void onCreate() {
-         super.onCreate();
-         Log.d(TAG, "Create");
- 
-         createNotificationChannel();
-         Notification notification = buildNotification();
-         startForeground(NOTIFICATION_ID, notification);
- 
-         handler = new Handler(Looper.getMainLooper());
- 
-         recordingStatusObservable = new MutableLiveData<>();
-         updateRecordingStatus(STATUS_DEFAULT);
-         gpsStatusObservable = new MutableLiveData<>(STATUS_GPS_DEFAULT);
-         recordingDataObservable = new MutableLiveData<>(NOT_RECORDING);
- 
-         trackPointCreator = new TrackPointCreator(this);
-         trackRecordingManager = new TrackRecordingManager(this, trackPointCreator, this, handler);
- 
-         voiceAnnouncementManager = new VoiceAnnouncementManager(this);
-         notificationManager = new TrackRecordingServiceNotificationManager(this);
- 
-         PreferencesUtils.registerOnSharedPreferenceChangeListener(this);
-     }
- 
-     private void createNotificationChannel() {
-         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-             NotificationChannel channel = new NotificationChannel(
-                     NOTIFICATION_CHANNEL_ID,
-                     "Track Recording",
-                     NotificationManager.IMPORTANCE_LOW
-             );
-             NotificationManager manager = getSystemService(NotificationManager.class);
-             if (manager != null) {
-                 manager.createNotificationChannel(channel);
-             }
-         }
-     }
- 
-     private Notification buildNotification() {
-         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
-                 .setContentTitle("OpenTracks")
-                 .setContentText("Recording track...")
-                 .setSmallIcon(R.drawable.ic_notification)
-                 .setOngoing(true);
- 
-         return builder.build();
-     }
-     
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.Service;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.ServiceInfo;
+import android.os.Handler;
+import android.os.Looper;
+import android.os.PowerManager.WakeLock;
+import android.util.Log;
+import android.util.Pair;
+
+import androidx.annotation.Nullable;
+import androidx.annotation.VisibleForTesting;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.MutableLiveData;
+
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.time.Duration;
+
+import de.dennisguse.opentracks.R;
+import de.dennisguse.opentracks.data.ContentProviderUtils;
+import de.dennisguse.opentracks.data.models.Distance;
+import de.dennisguse.opentracks.data.models.Marker;
+import de.dennisguse.opentracks.data.models.Track;
+import de.dennisguse.opentracks.data.models.TrackPoint;
+import de.dennisguse.opentracks.sensors.sensorData.SensorDataSet;
+import de.dennisguse.opentracks.services.announcement.VoiceAnnouncementManager;
+import de.dennisguse.opentracks.services.handlers.GpsStatusValue;
+import de.dennisguse.opentracks.services.handlers.TrackPointCreator;
+import de.dennisguse.opentracks.settings.PreferencesUtils;
+import de.dennisguse.opentracks.util.SystemUtils;
+
+public class TrackRecordingService extends Service implements TrackPointCreator.Callback, SharedPreferences.OnSharedPreferenceChangeListener, TrackRecordingManager.IdleObserver {
+
+    private static final String TAG = TrackRecordingService.class.getSimpleName();
+
+    private static final Duration RECORDING_DATA_UPDATE_INTERVAL = Duration.ofSeconds(1);
+    private static final int NOTIFICATION_ID = 1;
+    private static final String NOTIFICATION_CHANNEL_ID = "track_recording_channel";
+
+    public static final RecordingStatus STATUS_DEFAULT = RecordingStatus.notRecording();
+    public static final RecordingData NOT_RECORDING = new RecordingData(null, null, null);
+    public static final GpsStatusValue STATUS_GPS_DEFAULT = GpsStatusValue.GPS_NONE;
+
+    public TrackPoint getLastStoredTrackPointWithLocation() {
+        return trackRecordingManager.getLastStoredTrackPointWithLocation();
+    }
+
+    public class Binder extends android.os.Binder {
+        public TrackRecordingService getService() {
+            return TrackRecordingService.this;
+        }
+    }
+
+    private final Binder binder = new Binder();
+    private final Runnable updateRecordingData = new Runnable() {
+        @Override
+        public void run() {
+            updateRecordingDataWhileRecording();
+            handler.postDelayed(this, RECORDING_DATA_UPDATE_INTERVAL.toMillis());
+        }
+    };
+
+    private RecordingStatus recordingStatus;
+    private MutableLiveData<RecordingStatus> recordingStatusObservable;
+    private MutableLiveData<GpsStatusValue> gpsStatusObservable;
+    private MutableLiveData<RecordingData> recordingDataObservable;
+
+    private WakeLock wakeLock;
+    private Handler handler;
+
+    private TrackPointCreator trackPointCreator;
+    private TrackRecordingManager trackRecordingManager;
+    private VoiceAnnouncementManager voiceAnnouncementManager;
+    private TrackRecordingServiceNotificationManager notificationManager;
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.d(TAG, "Create");
+
+        createNotificationChannel();
+        Notification notification = buildNotification();
+        startForeground(NOTIFICATION_ID, notification);
+
+        handler = new Handler(Looper.getMainLooper());
+
+        recordingStatusObservable = new MutableLiveData<>();
+        updateRecordingStatus(STATUS_DEFAULT);
+        gpsStatusObservable = new MutableLiveData<>(STATUS_GPS_DEFAULT);
+        recordingDataObservable = new MutableLiveData<>(NOT_RECORDING);
+
+        trackPointCreator = new TrackPointCreator(this);
+        trackRecordingManager = new TrackRecordingManager(this, trackPointCreator, this, handler);
+
+        voiceAnnouncementManager = new VoiceAnnouncementManager(this);
+        notificationManager = new TrackRecordingServiceNotificationManager(this);
+
+        PreferencesUtils.registerOnSharedPreferenceChangeListener(this);
+    }
+
+    private void createNotificationChannel() {
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel(
+                    NOTIFICATION_CHANNEL_ID,
+                    "Track Recording",
+                    NotificationManager.IMPORTANCE_LOW
+            );
+            NotificationManager manager = getSystemService(NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+    }
+
+    private Notification buildNotification() {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+                .setContentTitle("OpenTracks")
+                .setContentText("Recording track...")
+                .setSmallIcon(R.drawable.ic_launcher_foreground)
+                .setOngoing(true);
+
+        return builder.build();
+    }
+
+    
     @Override
     public void onDestroy() {
         Log.d(TAG, "Destroying");
