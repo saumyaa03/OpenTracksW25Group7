@@ -56,8 +56,6 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
         private static final String TAG = CustomContentProvider.class.getSimpleName();
     
         private static final String SQL_LIST_DELIMITER = ",";
-
-        private static final String AND_CLAUSE_PREFIX = " AND (";
     
         private static final int TOTAL_DELETED_ROWS_VACUUM_THRESHOLD = 10000;
     
@@ -299,8 +297,8 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
         @Override
         public int update(@NonNull Uri url, ContentValues values, String where, String[] selectionArgs) {
             String table;
-            String whereClause = null;
-            String[] safeArgs = null;
+            String whereClause;
+            String[] safeArgs = selectionArgs;
         
             switch (getUrlType(url)) {
                 case TRACKPOINTS_BY_ID -> {
@@ -308,7 +306,7 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
                     whereClause = TrackPointsColumns._ID + "=?";
                     String id = String.valueOf(ContentUris.parseId(url));
                     if (!TextUtils.isEmpty(where)) {
-                        whereClause += AND_CLAUSE_PREFIX + where + ")";
+                        whereClause += " AND (" + where + ")";
                         safeArgs = mergeArgs(new String[]{id}, selectionArgs);
                     } else {
                         safeArgs = new String[]{id};
@@ -319,7 +317,7 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
                     whereClause = TracksColumns._ID + "=?";
                     String id = String.valueOf(ContentUris.parseId(url));
                     if (!TextUtils.isEmpty(where)) {
-                        whereClause += AND_CLAUSE_PREFIX + where + ")";
+                        whereClause += " AND (" + where + ")";
                         safeArgs = mergeArgs(new String[]{id}, selectionArgs);
                     } else {
                         safeArgs = new String[]{id};
@@ -330,7 +328,7 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
                     whereClause = MarkerColumns._ID + "=?";
                     String id = String.valueOf(ContentUris.parseId(url));
                     if (!TextUtils.isEmpty(where)) {
-                        whereClause += AND_CLAUSE_PREFIX + where + ")";
+                        whereClause += " AND (" + where + ")";
                         safeArgs = mergeArgs(new String[]{id}, selectionArgs);
                     } else {
                         safeArgs = new String[]{id};
@@ -343,11 +341,7 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
                         case MARKERS -> MarkerColumns.TABLE_NAME;
                         default -> throw new IllegalStateException();
                     };
-        
-                    if (!TextUtils.isEmpty(where)) {
-                        whereClause = escapeWhereClause(where);
-                    }
-                    safeArgs = selectionArgs;
+                    whereClause = where;
                 }
                 default -> throw new IllegalArgumentException("Unknown url " + url);
             }
@@ -364,30 +358,16 @@ import de.dennisguse.opentracks.settings.PreferencesUtils;
             getContext().getContentResolver().notifyChange(url, null, false);
             return count;
         }
-
-                /**
-         * Merges two arrays of SQL selection arguments.
-         */
+        
         private String[] mergeArgs(String[] first, String[] second) {
-            if (second == null || second.length == 0) return first;
+            if (second == null || second.length == 0) {
+                return first;
+            }
             String[] result = new String[first.length + second.length];
             System.arraycopy(first, 0, result, 0, first.length);
             System.arraycopy(second, 0, result, first.length, second.length);
             return result;
-        }
-
-        /**
-         * Escapes dangerous characters in WHERE clauses to prevent SQL injection.
-         */
-        private String escapeWhereClause(String input) {
-            if (input == null) return null;
-            return input
-                    .replace("'", "''")       // Escape single quotes
-                    .replace(";", "")         // Remove semicolons
-                    .replace("--", "")        // Remove SQL comment injection
-                    .replace("\"", "")        // Remove double quotes
-                    .replace("\\", "");       // Remove backslashes
-        }         
+        }       
     
         @NonNull
         private UrlType getUrlType(Uri url) {
