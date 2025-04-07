@@ -51,6 +51,9 @@ import de.dennisguse.opentracks.data.models.Track;
 import de.dennisguse.opentracks.data.models.TrackPoint;
 import de.dennisguse.opentracks.databinding.MarkerEditBinding;
 
+import java.io.File;
+import java.io.IOException;
+
 /**
  * An activity to add/edit a marker.
  *
@@ -276,7 +279,7 @@ public class MarkerEditActivity extends AbstractActivity {
 
         Track.Id trackId = getTrackId();
         if (trackId == null) {
-            Toast.makeText(this, R.string.invalid_track_id, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Invalid track ID", Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -284,7 +287,7 @@ public class MarkerEditActivity extends AbstractActivity {
         cameraPhotoUri = intentAndPhotoUri.second;
 
         if (cameraPhotoUri == null || !isSafeUri(cameraPhotoUri)) {
-            Toast.makeText(this, R.string.invalid_photo_uri, Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Invalid photo location", Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -305,8 +308,9 @@ public class MarkerEditActivity extends AbstractActivity {
     
         // For file URIs, verify the path is within our expected directory
         if ("file".equals(uri.getScheme())) {
-            File file = new File(uri.getPath());
+            
             try {
+                File file = new File(uri.getPath());
                 File expectedDir = new File(getExternalFilesDir(null), "marker_photos");
                 return file.getCanonicalPath().startsWith(expectedDir.getCanonicalPath());
             } catch (IOException e) {
