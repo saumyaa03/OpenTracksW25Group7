@@ -24,7 +24,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.content.ComponentName;
 
-
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.view.ViewCompat;
@@ -153,7 +152,7 @@ public class TrackRecordedActivity extends AbstractTrackDeleteActivity implement
     public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
-    
+
         if (intent != null && intent.resolveActivity(getPackageManager()) != null &&
             getPackageName().equals(intent.resolveActivity(getPackageManager()).getPackageName())) {
             handleIntent(intent);
@@ -161,7 +160,7 @@ public class TrackRecordedActivity extends AbstractTrackDeleteActivity implement
             Log.e(TAG, "Received untrusted intent.");
             finish();
         }
-    }    
+    }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -180,7 +179,10 @@ public class TrackRecordedActivity extends AbstractTrackDeleteActivity implement
     public boolean onOptionsItemSelected(MenuItem item) {
         if (item.getItemId() == R.id.track_detail_share) {
             Intent intent = Intent.createChooser(ShareUtils.newShareFileIntent(this, trackId), null);
-            startActivity(intent);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (intent.resolveActivity(getPackageManager()) != null) {
+                startActivity(intent);
+            }
             return true;
         }
 
@@ -191,19 +193,23 @@ public class TrackRecordedActivity extends AbstractTrackDeleteActivity implement
 
         if (item.getItemId() == R.id.track_detail_markers) {
             Intent intent = IntentUtils.newIntent(this, MarkerListActivity.class)
-                    .putExtra(MarkerListActivity.EXTRA_TRACK_ID, trackId);
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-            if (intent.resolveActivity(getPackageManager()) != null) {
+                    .putExtra(MarkerListActivity.EXTRA_TRACK_ID, trackId)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (intent.resolveActivity(getPackageManager()) != null && 
+                getPackageName().equals(intent.resolveActivity(getPackageManager()).getPackageName())) {
                 startActivity(intent);
             }
             return true;
         }
 
-
         if (item.getItemId() == R.id.track_detail_edit) {
             Intent intent = IntentUtils.newIntent(this, TrackEditActivity.class)
-                    .putExtra(TrackEditActivity.EXTRA_TRACK_ID, trackId);
-            startActivity(intent);
+                    .putExtra(TrackEditActivity.EXTRA_TRACK_ID, trackId)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (intent.resolveActivity(getPackageManager()) != null && 
+                getPackageName().equals(intent.resolveActivity(getPackageManager()).getPackageName())) {
+                startActivity(intent);
+            }
             return true;
         }
 
@@ -217,17 +223,28 @@ public class TrackRecordedActivity extends AbstractTrackDeleteActivity implement
                 service.resumeTrack(trackId);
 
                 Intent newIntent = IntentUtils.newIntent(TrackRecordedActivity.this, TrackRecordingActivity.class)
-                        .putExtra(TrackRecordingActivity.EXTRA_TRACK_ID, trackId);
-                startActivity(newIntent);
-                overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
-
-                finish();
+                        .putExtra(TrackRecordingActivity.EXTRA_TRACK_ID, trackId)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                
+                if (newIntent.resolveActivity(getPackageManager()) != null && 
+                    getPackageName().equals(newIntent.resolveActivity(getPackageManager()).getPackageName())) {
+                    startActivity(newIntent);
+                    overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out);
+                    finish();
+                } else {
+                    Log.e(TAG, "Untrusted activity for resume track intent");
+                }
             });
             return true;
         }
 
         if (item.getItemId() == R.id.track_detail_settings) {
-            startActivity(IntentUtils.newIntent(this, SettingsActivity.class));
+            Intent intent = IntentUtils.newIntent(this, SettingsActivity.class)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            if (intent.resolveActivity(getPackageManager()) != null && 
+                getPackageName().equals(intent.resolveActivity(getPackageManager()).getPackageName())) {
+                startActivity(intent);
+            }
             return true;
         }
 
@@ -263,25 +280,26 @@ public class TrackRecordedActivity extends AbstractTrackDeleteActivity implement
             finish();
             return;
         }
-    
+
+        // Verify the intent came from our app
+        ComponentName callingActivity = intent.getComponent();
+        if (callingActivity != null && !getPackageName().equals(callingActivity.getPackageName())) {
+            Log.e(TAG, "Intent received from untrusted source: " + callingActivity);
+            finish();
+            return;
+        }
+
         Track.Id maybeTrackId = intent.getParcelableExtra(EXTRA_TRACK_ID);
         if (maybeTrackId == null) {
             Log.e(TAG, "Missing EXTRA_TRACK_ID in Intent.");
             finish();
             return;
         }
-    
-        // Validate that the intent came from within this app
-        ComponentName resolvedComponent = intent.resolveActivity(getPackageManager());
-        if (resolvedComponent == null || !getPackageName().equals(resolvedComponent.getPackageName())) {
-            Log.e(TAG, "Untrusted source: " + resolvedComponent);
-            finish();
-            return;
-        }
-    
+
+        // Additional validation if needed
         trackId = maybeTrackId;
     }
-    
+
     private class CustomFragmentPagerAdapter extends FragmentStateAdapter {
 
         public CustomFragmentPagerAdapter(@NonNull FragmentActivity fa) {
