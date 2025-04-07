@@ -104,6 +104,9 @@ public class TrackRecordingService extends Service implements TrackPointCreator.
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "Create");
+    
+        Notification notification = buildNotification();
+        startForeground(NOTIFICATION_ID, notification);
 
         handler = new Handler(Looper.getMainLooper());
 

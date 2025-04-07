@@ -67,30 +67,32 @@ public class EspressoUITest {
     public void record_move_through_tabs() {
         {
             // TrackListActivity: start recording
-            ViewInteraction trackControllerRecordButton = onView(withId(R.id.track_list_fab_action));
-            trackControllerRecordButton.perform(click());
+            onView(withId(R.id.track_list_fab_action))
+                    .check(matches(isDisplayed()))
+                    .check(matches(isClickable()))
+                    .perform(click());
         }
         {
             // TrackRecordingActivity
             ViewInteraction tabLayout = onView(withId(R.id.track_detail_activity_tablayout));
             ViewInteraction trackControllerStopButton = onView(withId(R.id.track_recording_fab_action));
-
+    
             tabLayout.perform(selectTabAtIndex(1));
             tabLayout.perform(waitFor(1000));
-
+    
             tabLayout.perform(selectTabAtIndex(2));
             tabLayout.perform(waitFor(1000));
-
+    
             tabLayout.perform(selectTabAtIndex(3));
             tabLayout.perform(waitFor(1000));
-
+    
             tabLayout.perform(selectTabAtIndex(0));
             tabLayout.perform(waitFor(1000));
-
+    
             // stop
             trackControllerStopButton.perform(longClick());
         }
-    }
+    }    
 
     @LargeTest
     @Test
