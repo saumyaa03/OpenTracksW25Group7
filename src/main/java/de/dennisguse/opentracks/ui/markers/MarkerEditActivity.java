@@ -273,8 +273,20 @@ public class MarkerEditActivity extends AbstractActivity {
     }
 
     private void createMarkerWithPicture() {
+
+        Track.Id trackId = getTrackId();
+        if (trackId == null) {
+            Toast.makeText(this, R.string.invalid_track_id, Toast.LENGTH_LONG).show();
+            return;
+        }
+
         Pair<Intent, Uri> intentAndPhotoUri = MarkerUtils.createTakePictureIntent(this, getTrackId());
         cameraPhotoUri = intentAndPhotoUri.second;
+
+        if (cameraPhotoUri == null || !isSafeUri(cameraPhotoUri)) {
+            Toast.makeText(this, R.string.invalid_photo_uri, Toast.LENGTH_LONG).show();
+            return;
+        }
 
         try {
             takePictureFromCamera.launch(intentAndPhotoUri.first);
@@ -282,6 +294,28 @@ public class MarkerEditActivity extends AbstractActivity {
             Toast.makeText(this, R.string.no_compatible_camera_installed, Toast.LENGTH_LONG).show();
         }
     }
+
+    private boolean isSafeUri(Uri uri) {
+        if (uri == null) return false;
+        
+        // Verify the URI scheme is file or content
+        if (!"file".equals(uri.getScheme()) && !"content".equals(uri.getScheme())) {
+            return false;
+        }
+    
+        // For file URIs, verify the path is within our expected directory
+        if ("file".equals(uri.getScheme())) {
+            File file = new File(uri.getPath());
+            try {
+                File expectedDir = new File(getExternalFilesDir(null), "marker_photos");
+                return file.getCanonicalPath().startsWith(expectedDir.getCanonicalPath());
+            } catch (IOException e) {
+                return false;
+            }
+        }
+    
+        return true;
+    }    
 
     private void createMarkerWithGalleryImage() {
         PickVisualMediaRequest request = new PickVisualMediaRequest.Builder()
