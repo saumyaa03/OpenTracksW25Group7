@@ -322,7 +322,7 @@ public int delete(@NonNull Uri url, String where, String[] selectionArgs) {
             // TODO Use SQLiteQueryBuilder
             String table;
             String whereClause;
-
+          
             switch (getUrlType(url)) {
                 case TRACKPOINTS -> {
                     table = TrackPointsColumns.TABLE_NAME;
@@ -359,16 +359,17 @@ public int delete(@NonNull Uri url, String where, String[] selectionArgs) {
                 }
                 default -> throw new IllegalArgumentException("Unknown url " + url);
             }
-
-            // SQL injection mitigation
-            if (whereClause != null && containsUnsafeCharacters(whereClause)) {
-                throw new IllegalArgumentException("Unsafe characters detected in WHERE clause.");
-            }
-
+          
             int count;
+          
             try {
                 db.beginTransaction();
-                count = db.update(table, values, whereClause, selectionArgs);
+                if (whereClause != null && selectionArgs != null) {
+                    count = db.update(table, values, whereClause, selectionArgs);
+                } else {
+                    count = 0;
+                    Log.w("CustomContentProvider", "Rejecting update operation with null whereClause or selectionArgs");
+                }
                 db.setTransactionSuccessful();
             } finally {
                 db.endTransaction();
@@ -376,21 +377,8 @@ public int delete(@NonNull Uri url, String where, String[] selectionArgs) {
 
             getContext().getContentResolver().notifyChange(url, null, false);
             return count;
-        }
 
-        private boolean containsUnsafeCharacters(String input) {
-            if (input == null) return false;
-        
-            // Disallowed characters: ; " ' \
-            for (int i = 0; i < input.length(); i++) {
-                char c = input.charAt(i);
-                if (c == ';' || c == '"' || c == '\'' || c == '\\') {
-                    return true;
-                }
-            }
-            return false;
         }
-          
                  
         @NonNull
         private UrlType getUrlType(Uri url) {
@@ -461,4 +449,4 @@ public int delete(@NonNull Uri url, String where, String[] selectionArgs) {
             MARKERS_BY_TRACKID
         }
     
-    }
+}
